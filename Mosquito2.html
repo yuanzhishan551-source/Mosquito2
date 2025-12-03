@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosquito Slayer - Perspective Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: white;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+            user-select: none;
+        }
+
+        #input_video { display: none; }
+
+        /* Mirror the canvas */
+        #output_canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1); 
+        }
+
+        #start-screen {
+            position: absolute;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: opacity 0.3s;
+            max-width: 400px;
+        }
+        
+        #start-screen:active { transform: scale(0.98); }
+        h1 { margin-top: 0; color: #333; }
+        p { color: #666; line-height: 1.6; }
+        .tips { font-size: 0.9em; color: #888; margin-top: 10px; font-weight: bold; border-top: 1px solid #eee; padding-top: 10px;}
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" onclick="startGame()">
+        <h1>🦟 Mosquito Slayer</h1>
+        <p><b>Click Here to Start</b><br><small>(Please allow camera access)</small></p>
+        <p>
+            🖐️ <b>Slap:</b> Push your palm towards the screen.<br>
+            (Hand shrinks to simulate distance)<br><br>
+            🙏 <b>Clap:</b> Position hands sideways and clap fast.
+        </p>
+        <div class="tips">Visual Effect: Your digital hand shrinks when you reach forward to simulate real-life perspective.</div>
+    </div>
+
+    <video id="input_video"></video>
+    <canvas id="output_canvas"></canvas>
+
+    <script>
+        // --- Assets ---
+        const IMG_SIDE_HAND = new Image();
+        IMG_SIDE_HAND.src = "https://files.catbox.moe/hlzzt5.png"; 
+        
+        const IMG_OPEN_HAND = new Image();
+        IMG_OPEN_HAND.src = "https://files.catbox.moe/ywe43q.png"; 
+        
+        const IMG_CLAP_SUCCESS = new Image();
+        IMG_CLAP_SUCCESS.src = "https://files.catbox.moe/mvf62w.png"; 
+
+        const IMG_MOSQUITO = new Image();
+        IMG_MOSQUITO.src = "https://files.catbox.moe/qyq34g.png";
+        
+        const AUDIO_MOSQUITO = new Audio("https://files.catbox.moe/tdee34.wav");
+        AUDIO_MOSQUITO.loop = true;
+        
+        const AUDIO_SLAP = new Audio("https://files.catbox.moe/vbp11i.m4a");
+
+        // --- Game State ---
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const videoElement = document.getElementById('input_video');
+        
+        let mosquito = { x: 0.5, y: 0.5, vx: 0.005, vy: 0.005, alive: true, respawnTimer: 0 };
+        let clapEffect = { active: false, x: 0, y: 0, timer: 0 };
+        let persistedHands = {};
+        
+        let handStates = {
+            0: { lastSize: 0, slapAnimTimer: 0, velocity: 0 },
+            1: { lastSize: 0, slapAnimTimer: 0, velocity: 0 }
+        };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startGame() {
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
+            
+            AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
+            
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await hands.send({image: videoElement});
+                },
+                width: 1280,
+                height: 720
+            });
+            camera.start();
+        }
+
+        // --- Logic ---
+        function updateMosquito() {
+            if (!mosquito.alive) {
+                mosquito.respawnTimer++;
+                if (mosquito.respawnTimer > 60) { 
+                    mosquito.alive = true;
+                    mosquito.x = Math.random() * 0.8 + 0.1;
+                    mosquito.y = Math.random() * 0.8 + 0.1;
+                    mosquito.respawnTimer = 0;
+                    AUDIO_MOSQUITO.play();
+                }
+                return;
+            }
+            mosquito.x += mosquito.vx;
+            mosquito.y += mosquito.vy;
+            // Random movement jitter
+            if (Math.random() < 0.05) mosquito.vx = (Math.random() - 0.5) * 0.015;
+            if (Math.random() < 0.05) mosquito.vy = (Math.random() - 0.5) * 0.015;
+            
+            // Bounds check
+            if (mosquito.x < 0.05) mosquito.vx = Math.abs(mosquito.vx);
+            if (mosquito.x > 0.95) mosquito.vx = -Math.abs(mosquito.vx);
+            if (mosquito.y < 0.05) mosquito.vy = Math.abs(mosquito.vy);
+            if (mosquito.y > 0.95) mosquito.vy = -Math.abs(mosquito.vy);
+        }
+
+        function playSlapSound() {
+            let sound = AUDIO_SLAP.cloneNode();
+            sound.volume = 1.0;
+            sound.play();
+        }
+
+        function killMosquito() {
+            if (!mosquito.alive) return;
+            mosquito.alive = false;
+            AUDIO_MOSQUITO.pause();
+            AUDIO_MOSQUITO.currentTime = 0;
+            playSlapSound();
+        }
+
+        // --- MediaPipe Setup ---
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        function onResults(results) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 1. Draw Mosquito
+            updateMosquito();
+            if (mosquito.alive) {
+                const mx = mosquito.x * canvas.width;
+                const my = mosquito.y * canvas.height;
+                const mSize = 60; // Size of the mosquito image
+
+                ctx.save();
+                ctx.translate(mx, my);
+                
+                // Rotate mosquito to face movement direction
+                // Adding PI/2 (90 deg) because usually images point up, but atan2 is relative to X axis
+                const angle = Math.atan2(mosquito.vy, mosquito.vx);
+                ctx.rotate(angle + Math.PI / 2); 
+
+                ctx.drawImage(IMG_MOSQUITO, -mSize/2, -mSize/2, mSize, mSize);
+                ctx.restore();
+            }
+
+            // 2. Clap Effect
+            if (clapEffect.active) {
+                clapEffect.timer--;
+                const size = 300; 
+                ctx.drawImage(IMG_CLAP_SUCCESS, clapEffect.x - size/2, clapEffect.y - size/2, size, size);
+                if (clapEffect.timer <= 0) clapEffect.active = false;
+                return; 
+            }
+
+            // 3. Process Hand Data
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                results.multiHandLandmarks.forEach((landmarks, index) => {
+                    const label = results.multiHandedness[index].label;
+                    const wrist = landmarks[0];
+                    const thumbTip = landmarks[4];
+                    const middleTip = landmarks[12];
+                    const pinkyMcp = landmarks[17];
+                    const cx = landmarks[9].x; 
+                    const cy = landmarks[9].y;
+
+                    // Side hand detection logic
+                    const handLength = Math.hypot(middleTip.x - wrist.x, middleTip.y - wrist.y);
+                    const handWidth = Math.hypot(thumbTip.x - pinkyMcp.x, thumbTip.y - pinkyMcp.y);
+                    let ratio = 0.5;
+                    if (handLength > 0) ratio = handWidth / handLength;
+                    const isSide = ratio < 0.38;
+
+                    let angle = Math.atan2(middleTip.y - wrist.y, middleTip.x - wrist.x);
+                    angle += Math.PI / 2;
+
+                    persistedHands[index] = {
+                        x: cx, y: cy,
+                        angle: angle,
+                        label: label,
+                        isSide: isSide,
+                        size: handLength, 
+                        landmarks: landmarks
+                    };
+                });
+            }
+
+            // 4. Render Hands
+            const handKeys = Object.keys(persistedHands);
+            let currentHandsList = []; 
+
+            handKeys.forEach(key => {
+                const hand = persistedHands[key];
+                const state = handStates[key];
+
+                const screenX = hand.x * canvas.width;
+                const screenY = hand.y * canvas.height;
+                
+                let isSlapping = false;
+                let renderScale = 1.0; 
+                let shadowAlpha = 0.5; 
+                let shadowOffset = 20; 
+
+                // --- Slap Logic (Palm facing screen) ---
+                if (!hand.isSide) {
+                    const sizeDiff = hand.size - state.lastSize;
+                    state.velocity = state.velocity * 0.6 + sizeDiff * 0.4;
+                    
+                    // Detect rapid expansion (moving towards screen)
+                    if (state.velocity > 0.008 && hand.size > 0.15 && state.slapAnimTimer === 0) {
+                        state.slapAnimTimer = 10; 
+                        playSlapSound(); 
+                        const dist = Math.hypot(hand.x - mosquito.x, hand.y - mosquito.y);
+                        if (dist < 0.2) killMosquito();
+                    }
+
+                    state.lastSize = hand.size;
+
+                    if (state.slapAnimTimer > 0) {
+                        isSlapping = true;
+                        state.slapAnimTimer--;
+                        renderScale = 0.85; // Compression effect
+                        shadowAlpha = 0;
+                        shadowOffset = 0;
+                    } 
+                } else {
+                    state.slapAnimTimer = 0;
+                    state.lastSize = hand.size;
+                }
+
+                currentHandsList.push(hand);
+
+                // --- Drawing ---
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.rotate(hand.angle);
+
+                if (hand.label === 'Left') ctx.scale(-1, 1); 
+
+                const img = hand.isSide ? IMG_SIDE_HAND : IMG_OPEN_HAND;
+                
+                // === Perspective Calculation ===
+                // hand.size 0.1 (far) -> 0.4 (close)
+                // Goal: Closer hand = Smaller image (perspective)
+                let baseHeight = 480 - (hand.size * 800);
+
+                // Clamping
+                if (baseHeight < 120) baseHeight = 120;
+                if (baseHeight > 450) baseHeight = 450;
+
+                baseHeight *= renderScale;
+
+                // Shadow Calculation
+                if (!hand.isSide) {
+                    shadowOffset = (0.5 - hand.size) * 80;
+                    if (shadowOffset < 0) shadowOffset = 0;
+
+                    ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha})`;
+                    ctx.shadowBlur = isSlapping ? 0 : 30;
+                    ctx.shadowOffsetX = shadowOffset; 
+                    ctx.shadowOffsetY = shadowOffset; 
+                }
+
+                const ratio = img.naturalWidth / img.naturalHeight || 0.8;
+                const drawWidth = baseHeight * ratio;
+                const drawHeight = baseHeight;
+
+                ctx.drawImage(img, -drawWidth/2, -drawHeight/2, drawWidth, drawHeight);
+                ctx.restore();
+            });
+
+            // 5. Clap Detection (Side hands)
+            if (currentHandsList.length === 2) {
+                const h1 = currentHandsList[0];
+                const h2 = currentHandsList[1];
+                if (h1.isSide || h2.isSide) {
+                    const dist = Math.hypot(h1.x - h2.x, h1.y - h2.y);
+                    if (dist < 0.15) {
+                        clapEffect.active = true;
+                        clapEffect.timer = 15;
+                        clapEffect.x = (h1.x + h2.x) / 2 * canvas.width;
+                        clapEffect.y = (h1.y + h2.y) / 2 * canvas.height;
+                        
+                        playSlapSound();
+                        const mDist = Math.hypot(clapEffect.x/canvas.width - mosquito.x, clapEffect.y/canvas.height - mosquito.y);
+                        if (mDist < 0.2) killMosquito();
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
