@@ -202,10 +202,14 @@
             // 2. Clap Effect
             if (clapEffect.active) {
                 clapEffect.timer--;
-                const size = 300; 
-                ctx.drawImage(IMG_CLAP_SUCCESS, clapEffect.x - size/2, clapEffect.y - size/2, size, size);
+                const baseSize = 300;
+                // Preserve original aspect ratio of clap image
+                const clapRatio = IMG_CLAP_SUCCESS.naturalWidth / IMG_CLAP_SUCCESS.naturalHeight || 1;
+                const clapWidth = baseSize * clapRatio;
+                const clapHeight = baseSize;
+                ctx.drawImage(IMG_CLAP_SUCCESS, clapEffect.x - clapWidth/2, clapEffect.y - clapHeight/2, clapWidth, clapHeight);
                 if (clapEffect.timer <= 0) clapEffect.active = false;
-                return; 
+                return;
             }
 
             // 3. Process Hand Data
@@ -302,6 +306,9 @@
                 // Clamping
                 if (baseHeight < 120) baseHeight = 120;
                 if (baseHeight > 450) baseHeight = 450;
+
+                // Double the size of hand gestures
+                baseHeight *= 2.0;
 
                 baseHeight *= renderScale;
 
