@@ -85,8 +85,6 @@
 
         const AUDIO_SLAP = new Audio("https://files.catbox.moe/vbp11i.m4a");
 
-        const AUDIO_SWITCH = new Audio("https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/Switch%20sound.m4a");
-
         // --- Game State ---
         const canvas = document.getElementById('output_canvas');
         const ctx = canvas.getContext('2d');
@@ -126,8 +124,6 @@
         function startGame() {
             // Stop the image animation
             clearInterval(imageAnimationInterval);
-            // Play switch sound effect
-            AUDIO_SWITCH.play().catch(e => console.log("Switch sound error", e));
 
             document.getElementById('start-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
