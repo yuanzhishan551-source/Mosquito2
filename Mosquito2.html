@@ -14,7 +14,7 @@
             padding: 0;
             width: 100vw;
             height: 100vh;
-            background-color: black;
+            background-color: white;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -118,10 +118,7 @@
             document.getElementById('start-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
 
-            // Wait 2 seconds before playing mosquito audio
-            setTimeout(() => {
-                AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
-            }, 2000);
+            AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
 
             const camera = new Camera(videoElement, {
                 onFrame: async () => {
