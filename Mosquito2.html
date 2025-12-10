@@ -73,16 +73,19 @@
     <script>
         // --- Assets ---
         const IMG_SIDE_HAND = new Image();
-        IMG_SIDE_HAND.src = "https://files.catbox.moe/hlzzt5.png"; 
-        
+        IMG_SIDE_HAND.src = "https://files.catbox.moe/hlzzt5.png";
+
         const IMG_OPEN_HAND = new Image();
-        IMG_OPEN_HAND.src = "https://files.catbox.moe/ywe43q.png"; 
-        
+        IMG_OPEN_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/right%20hand.png";
+
         const IMG_CLAP_SUCCESS = new Image();
-        IMG_CLAP_SUCCESS.src = "https://files.catbox.moe/mvf62w.png"; 
+        IMG_CLAP_SUCCESS.src = "https://files.catbox.moe/mvf62w.png";
 
         const IMG_MOSQUITO = new Image();
         IMG_MOSQUITO.src = "https://files.catbox.moe/qyq34g.png";
+
+        const IMG_BLOOD = new Image();
+        IMG_BLOOD.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/Blood.png";
         
         const AUDIO_MOSQUITO = new Audio("https://files.catbox.moe/tdee34.wav");
         AUDIO_MOSQUITO.loop = true;
@@ -93,8 +96,8 @@
         const canvas = document.getElementById('output_canvas');
         const ctx = canvas.getContext('2d');
         const videoElement = document.getElementById('input_video');
-        
-        let mosquito = { x: 0.5, y: 0.5, vx: 0.005, vy: 0.005, alive: true, respawnTimer: 0 };
+
+        let mosquito = { x: 0.5, y: 0.5, vx: 0.005, vy: 0.005, alive: true, respawnTimer: 0, deadX: 0, deadY: 0 };
         let clapEffect = { active: false, x: 0, y: 0, timer: 0 };
         let persistedHands = {};
         
@@ -161,6 +164,8 @@
         function killMosquito() {
             if (!mosquito.alive) return;
             mosquito.alive = false;
+            mosquito.deadX = mosquito.x;
+            mosquito.deadY = mosquito.y;
             AUDIO_MOSQUITO.pause();
             AUDIO_MOSQUITO.currentTime = 0;
             playSlapSound();
@@ -189,12 +194,25 @@
 
                 ctx.save();
                 ctx.translate(mx, my);
-                
+
                 // Rotate mosquito to face movement direction
                 // Adding PI/2 (90 deg) because usually images point up, but atan2 is relative to X axis
                 const angle = Math.atan2(mosquito.vy, mosquito.vx);
-                ctx.rotate(angle + Math.PI / 2); 
+                ctx.rotate(angle + Math.PI / 2);
 
+                ctx.drawImage(IMG_MOSQUITO, -mSize/2, -mSize/2, mSize, mSize);
+                ctx.restore();
+            } else if (mosquito.respawnTimer > 0) {
+                // Draw blood pool first (in the background)
+                const bloodSize = 120;
+                const deadX = mosquito.deadX * canvas.width;
+                const deadY = mosquito.deadY * canvas.height;
+                ctx.drawImage(IMG_BLOOD, deadX - bloodSize/2, deadY - bloodSize/2, bloodSize, bloodSize);
+
+                // Draw dead mosquito on top of blood pool (in the center)
+                const mSize = 60;
+                ctx.save();
+                ctx.translate(deadX, deadY);
                 ctx.drawImage(IMG_MOSQUITO, -mSize/2, -mSize/2, mSize, mSize);
                 ctx.restore();
             }
