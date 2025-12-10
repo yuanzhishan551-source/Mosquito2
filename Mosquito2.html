@@ -57,7 +57,7 @@
 <body>
 
     <div id="start-screen" onclick="startGame()">
-        <h1>🦟 Mosquito Slayer</h1>
+        <h1>🦟 Mosquito Slayer v2</h1>
         <p><b>Click Here to Start</b><br><small>(Please allow camera access)</small></p>
         <p>
             🖐️ <b>Slap:</b> Push your palm towards the screen.<br>
@@ -231,6 +231,9 @@
             }
 
             // 3. Process Hand Data
+            // Clear persisted hands to avoid showing hands after they leave the screen
+            persistedHands = {};
+
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 results.multiHandLandmarks.forEach((landmarks, index) => {
                     const label = results.multiHandedness[index].label;
@@ -272,11 +275,11 @@
 
                 const screenX = hand.x * canvas.width;
                 const screenY = hand.y * canvas.height;
-                
+
                 let isSlapping = false;
-                let renderScale = 1.0; 
-                let shadowAlpha = 0.5; 
-                let shadowOffset = 20; 
+                let renderScale = 1.0;
+                let shadowAlpha = 0.167; // Reduced to 1/3 of original (0.5 / 3)
+                let shadowOffset = 6.67; // Reduced to 1/3 of original (20 / 3) 
 
                 // --- Slap Logic (Palm facing screen) ---
                 if (!hand.isSide) {
@@ -325,20 +328,20 @@
                 if (baseHeight < 120) baseHeight = 120;
                 if (baseHeight > 450) baseHeight = 450;
 
-                // Double the size of hand gestures
-                baseHeight *= 2.0;
+                // Quadruple the size of hand gestures
+                baseHeight *= 4.0;
 
                 baseHeight *= renderScale;
 
-                // Shadow Calculation
+                // Shadow Calculation (reduced to 1/3 of original)
                 if (!hand.isSide) {
-                    shadowOffset = (0.5 - hand.size) * 80;
+                    shadowOffset = (0.5 - hand.size) * 26.67; // Reduced to 1/3 of original (80 / 3)
                     if (shadowOffset < 0) shadowOffset = 0;
 
                     ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha})`;
-                    ctx.shadowBlur = isSlapping ? 0 : 30;
-                    ctx.shadowOffsetX = shadowOffset; 
-                    ctx.shadowOffsetY = shadowOffset; 
+                    ctx.shadowBlur = isSlapping ? 0 : 10; // Reduced to 1/3 of original (30 / 3)
+                    ctx.shadowOffsetX = shadowOffset;
+                    ctx.shadowOffsetY = shadowOffset;
                 }
 
                 const ratio = img.naturalWidth / img.naturalHeight || 0.8;
