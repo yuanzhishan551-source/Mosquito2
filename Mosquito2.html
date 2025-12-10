@@ -14,7 +14,7 @@
             padding: 0;
             width: 100vw;
             height: 100vh;
-            background-color: black;
+            background-color: white;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -45,14 +45,6 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
-            opacity: 0;
-            animation: fadeIn 3s forwards;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
         }
 
         #start-screen img {
@@ -65,7 +57,7 @@
 <body>
 
     <div id="start-screen" onclick="startGame()">
-        <img src="https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/0693f86f0116924d6ff344c725c23b8c.png" alt="Start Game">
+        <img src="https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/switch2.png" alt="Start Game">
     </div>
 
     <video id="input_video"></video>
@@ -74,10 +66,10 @@
     <script>
         // --- Assets ---
         const IMG_SIDE_HAND = new Image();
-        IMG_SIDE_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/on%20side%20right%20hand.png";
+        IMG_SIDE_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/on%20side%20right%20hand%202.png";
 
         const IMG_OPEN_HAND = new Image();
-        IMG_OPEN_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/right%20hand.png";
+        IMG_OPEN_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/right%20hand%202.png";
 
         const IMG_CLAP_SUCCESS = new Image();
         IMG_CLAP_SUCCESS.src = "https://files.catbox.moe/mvf62w.png";
@@ -118,10 +110,7 @@
             document.getElementById('start-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
 
-            // Wait 2 seconds before playing mosquito audio
-            setTimeout(() => {
-                AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
-            }, 2000);
+            AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
 
             const camera = new Camera(videoElement, {
                 onFrame: async () => {
