@@ -48,8 +48,8 @@
         }
 
         #start-screen img {
-            max-width: 80%;
-            max-height: 80%;
+            max-width: 20%;
+            max-height: 20%;
             object-fit: contain;
         }
     </style>
@@ -105,6 +105,9 @@
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        // Play mosquito audio on page load (during black screen)
+        AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
 
         function startGame() {
             document.getElementById('start-screen').style.opacity = '0';
@@ -321,11 +324,12 @@
                 if (baseHeight < 120) baseHeight = 120;
                 if (baseHeight > 450) baseHeight = 450;
 
-                // Quadruple the size of hand gestures
-                baseHeight *= 4.0;
-
-                // Side hand gets additional 2x scaling (200% larger)
+                // Scale hand gestures
                 if (hand.isSide) {
+                    // Side hand: 4x size
+                    baseHeight *= 4.0;
+                } else {
+                    // Open hand: 2x size
                     baseHeight *= 2.0;
                 }
 
