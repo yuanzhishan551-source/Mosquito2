@@ -14,7 +14,7 @@
             padding: 0;
             width: 100vw;
             height: 100vh;
-            background-color: white;
+            background-color: black;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -32,39 +32,40 @@
             top: 0;
             width: 100%;
             height: 100%;
-            transform: scaleX(-1); 
+            transform: scaleX(-1);
         }
 
         #start-screen {
             position: absolute;
             z-index: 10;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
             cursor: pointer;
-            transition: opacity 0.3s;
-            max-width: 400px;
+            opacity: 0;
+            animation: fadeIn 3s forwards;
         }
-        
-        #start-screen:active { transform: scale(0.98); }
-        h1 { margin-top: 0; color: #333; }
-        p { color: #666; line-height: 1.6; }
-        .tips { font-size: 0.9em; color: #888; margin-top: 10px; font-weight: bold; border-top: 1px solid #eee; padding-top: 10px;}
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        #start-screen img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
 
     <div id="start-screen" onclick="startGame()">
-        <h1>🦟 Mosquito Slayer v2</h1>
-        <p><b>Click Here to Start</b><br><small>(Please allow camera access)</small></p>
-        <p>
-            🖐️ <b>Slap:</b> Push your palm towards the screen.<br>
-            (Hand shrinks to simulate distance)<br><br>
-            🙏 <b>Clap:</b> Position hands sideways and clap fast.
-        </p>
-        <div class="tips">Visual Effect: Your digital hand shrinks when you reach forward to simulate real-life perspective.</div>
+        <img src="https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/0693f86f0116924d6ff344c725c23b8c.png" alt="Start Game">
     </div>
 
     <video id="input_video"></video>
@@ -73,7 +74,7 @@
     <script>
         // --- Assets ---
         const IMG_SIDE_HAND = new Image();
-        IMG_SIDE_HAND.src = "https://files.catbox.moe/hlzzt5.png";
+        IMG_SIDE_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/on%20side%20right%20hand.png";
 
         const IMG_OPEN_HAND = new Image();
         IMG_OPEN_HAND.src = "https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/right%20hand.png";
@@ -116,9 +117,12 @@
         function startGame() {
             document.getElementById('start-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
-            
-            AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
-            
+
+            // Wait 2 seconds before playing mosquito audio
+            setTimeout(() => {
+                AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
+            }, 2000);
+
             const camera = new Camera(videoElement, {
                 onFrame: async () => {
                     await hands.send({image: videoElement});
@@ -330,6 +334,11 @@
 
                 // Quadruple the size of hand gestures
                 baseHeight *= 4.0;
+
+                // Side hand gets additional 2x scaling (200% larger)
+                if (hand.isSide) {
+                    baseHeight *= 2.0;
+                }
 
                 baseHeight *= renderScale;
 
