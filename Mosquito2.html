@@ -82,8 +82,10 @@
         
         const AUDIO_MOSQUITO = new Audio("https://files.catbox.moe/tdee34.wav");
         AUDIO_MOSQUITO.loop = true;
-        
+
         const AUDIO_SLAP = new Audio("https://files.catbox.moe/vbp11i.m4a");
+
+        const AUDIO_SWITCH = new Audio("https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/Switch%20sound.m4a");
 
         // --- Game State ---
         const canvas = document.getElementById('output_canvas');
@@ -110,9 +112,13 @@
         AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
 
         function startGame() {
+            // Play switch sound effect
+            AUDIO_SWITCH.play().catch(e => console.log("Switch sound error", e));
+
             document.getElementById('start-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
 
+            // Ensure mosquito audio is playing
             AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
 
             const camera = new Camera(videoElement, {
@@ -186,7 +192,7 @@
             if (mosquito.alive) {
                 const mx = mosquito.x * canvas.width;
                 const my = mosquito.y * canvas.height;
-                const mSize = 60; // Size of the mosquito image
+                const mSize = 30; // Size of the mosquito image (reduced to 1/2)
 
                 ctx.save();
                 ctx.translate(mx, my);
@@ -206,7 +212,7 @@
                 ctx.drawImage(IMG_BLOOD, deadX - bloodSize/2, deadY - bloodSize/2, bloodSize, bloodSize);
 
                 // Draw dead mosquito on top of blood pool (in the center)
-                const mSize = 60;
+                const mSize = 30; // Size of dead mosquito (reduced to 1/2)
                 ctx.save();
                 ctx.translate(deadX, deadY);
                 ctx.drawImage(IMG_MOSQUITO, -mSize/2, -mSize/2, mSize, mSize);
