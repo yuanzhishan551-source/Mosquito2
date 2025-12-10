@@ -38,7 +38,7 @@
         #start-screen {
             position: absolute;
             z-index: 10;
-            background: black;
+            background: white;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -57,7 +57,7 @@
 <body>
 
     <div id="start-screen" onclick="startGame()">
-        <img src="https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/switch2.png" alt="Start Game">
+        <img id="start-image" src="https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/Start1.png" alt="Start Game">
     </div>
 
     <video id="input_video"></video>
@@ -108,10 +108,24 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Play mosquito audio on page load (during black screen)
+        // Play mosquito audio on page load (during start screen)
         AUDIO_MOSQUITO.play().catch(e => console.log("Audio play error", e));
 
+        // Animate start screen images (switch between Start1.png and Start 2.png every 1 second)
+        const startImage = document.getElementById('start-image');
+        const startImageUrls = [
+            'https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/Start1.png',
+            'https://raw.githubusercontent.com/yuanzhishan551-source/Mosquito2/main/Start%202.png'
+        ];
+        let currentImageIndex = 0;
+        let imageAnimationInterval = setInterval(() => {
+            currentImageIndex = (currentImageIndex + 1) % 2;
+            startImage.src = startImageUrls[currentImageIndex];
+        }, 1000);
+
         function startGame() {
+            // Stop the image animation
+            clearInterval(imageAnimationInterval);
             // Play switch sound effect
             AUDIO_SWITCH.play().catch(e => console.log("Switch sound error", e));
 
