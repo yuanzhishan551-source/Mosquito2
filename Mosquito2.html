@@ -231,6 +231,9 @@
             }
 
             // 3. Process Hand Data
+            // Clear persisted hands to avoid showing hands after they leave the screen
+            persistedHands = {};
+
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 results.multiHandLandmarks.forEach((landmarks, index) => {
                     const label = results.multiHandedness[index].label;
@@ -325,8 +328,8 @@
                 if (baseHeight < 120) baseHeight = 120;
                 if (baseHeight > 450) baseHeight = 450;
 
-                // Double the size of hand gestures
-                baseHeight *= 2.0;
+                // Quadruple the size of hand gestures
+                baseHeight *= 4.0;
 
                 baseHeight *= renderScale;
 
